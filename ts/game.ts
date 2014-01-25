@@ -11,11 +11,11 @@ var stage = new createjs.Stage("game");
   //{ src:'assets/boid.png', id:'boid' },
 //];
 
-var TileSize = 64;
+var TileSize = 128;
 for(var y=0; y<8; y++) {
     for(var x=0; x<8; x++) {
-        var tile = drawBuildings(generateBuildings(4, 4),
-                                 scale=TileSize/4, roadWidth=4);
+        var tile = drawBuildings(generateBuildings(8, 8, 3),
+                                 scale=16, roadWidth=4);
         stage.addChild(tile);
         tile.x = x * TileSize;
         tile.y = y * TileSize;

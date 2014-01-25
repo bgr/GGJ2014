@@ -13,19 +13,21 @@ function emptyGrid(width, height) {
     return grid;
 }
 
-function generateBuildings(width, height) {
+function generateBuildings(width, height, maxSize=3) {
     var grid = emptyGrid(width, height);
     var rects = [];
-    for(var y=0; y<grid.length-1; y++) {
+    for(var y=0; y<grid.length; y++) {
         var row = grid[y];
-        for(var x=0; x<row.length-1; x++) {
+        for(var x=0; x<row.length; x++) {
             if(row[x] == 0) {
                 // find maxWidth so we don't overlap existing tall building
-                for(var maxWidth=1; 
-                    (row[x+maxWidth] == 0) && ((x+maxWidth) < (row.length-1));
-                    maxWidth++);
-                var rectWidth = 1 + Math.floor(Math.random() * maxWidth);
-                var rectHeight = 1 + Math.floor(Math.random() * (grid.length - y - 2));
+                for(var curMaxWidth=1; 
+                        (row[x+curMaxWidth] == 0) 
+                        && (x+curMaxWidth) < (row.length-2)
+                        && curMaxWidth < maxSize);
+                    curMaxWidth++);
+                var rectWidth = 1 + Math.floor(Math.random() * curMaxWidth);
+                var rectHeight = 1 + Math.floor(Math.random() * Math.min(maxSize, grid.length-y-1));
                 rects.push(new Rect(x, y, rectWidth, rectHeight));
                 for(var oy=y; oy<y+rectHeight; oy++) {
                     for(var ox=x; ox<x+rectWidth; ox++) {
