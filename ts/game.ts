@@ -13,14 +13,15 @@ var SCALE = CANVAS_SIZE_PX / CITY_SIZE;
 var PLAYER_SIZE = ROAD_WIDTH / 4;
 var ROAD_WIDTH = 4 / SCALE;
 var CITY_BLOCK_SIZE_PX = CANVAS_SIZE_PX / NUM_CITY_BLOCKS;
+var BUILDING_UNIT_PX = 16;
 
 var loader = new createjs.LoadQueue();
 
 loader.on("fileload", (e) => { console.log("file complete", e); });
 loader.on("complete", (e) => { console.log("completed"); init(); });
 
-for (var i=0; i<manifests.length; i++) {
-    loader.loadManifest(manifests[i], loadNow=(i==manifests.length-1));
+for (k in manifests) {
+    loader.loadManifest(manifests[k]);
 }
 
 import b2Common = Box2D.Common;
@@ -75,21 +76,25 @@ class CityBlock {
 
         // render big
         this.big = new createjs.Shape();
-        this.big.graphics.beginFill("#ff3e3e").setStrokeStyle(0);
-        this.big.graphics.drawRect(0, 0, CANVAS_SIZE_PX, CANVAS_SIZE_PX);
-        this.big.graphics.beginFill("#ff6763");
+        this.big.graphics.beginFill("#3e3e3e").setStrokeStyle(0);
+        var mx = new createjs.Matrix2D();
+        this.big.graphics.drawRect(0, 0, 
+                BUILDINGS_PER_BLOCK * BUILDING_UNIT_PX, BUILDINGS_PER_BLOCK * BUILDING_UNIT_PX);
         for(var i=0; i < this.rects.length; i++) {
             var rect = this.rects[i];
-            var rx = rect.x + ROAD_WIDTH / 2;
-            var ry = rect.y + ROAD_WIDTH / 2;
-            var rw = rect.width - ROAD_WIDTH;
-            var rh = rect.height - ROAD_WIDTH;
-            this.big.graphics.drawRect(rx * CANVAS_SIZE_PX / BUILDINGS_PER_BLOCK, 
-                                       ry * CANVAS_SIZE_PX / BUILDINGS_PER_BLOCK,
-                                       rw * CANVAS_SIZE_PX / BUILDINGS_PER_BLOCK + 1,
-                                       rh * CANVAS_SIZE_PX / BUILDINGS_PER_BLOCK + 1);
+            var rx = rect.x * BUILDING_UNIT_PX;
+            var ry = rect.y * BUILDING_UNIT_PX;
+            var key = "b" + rect.width + "" + rect.height;
+            var img = loader.getResult(rndelem(manifests[key]).src);
+            mx.translate(rx, ry);
+            this.big.graphics.beginBitmapFill(img, "no-repeat", mx);
+            this.big.graphics.drawRect(rx, ry, 
+                                       rect.width * BUILDING_UNIT_PX, 
+                                       rect.height * BUILDING_UNIT_PX);
+            mx.translate(-rx, -ry);
         }
-        this.big.cache(0, 0, CANVAS_SIZE_PX, CANVAS_SIZE_PX);
+        this.big.cache(0, 0, 
+                BUILDINGS_PER_BLOCK * BUILDING_UNIT_PX, BUILDINGS_PER_BLOCK * BUILDING_UNIT_PX);
     }
 
     enableBig(world: b2World) {
@@ -126,6 +131,7 @@ function hideBig(bigSprite) {
 
 function showBig(bigSprite) {
     stage.addChild(bigSprite);
+    bigSprite.scaleX = bigSprite.scaleY = 4;
 }
 
 var blocks = [];
@@ -138,6 +144,11 @@ function init() {
     fixDef.restitution = 0.2;
     bodyDef = new b2BodyDef();
     stage = new createjs.Stage("game");
+    var context = stage.canvas.getContext("2d"):
+    if(context.imageSmoothingEnabled) {context.imageSmoothingEnabled = false;}
+    if(context.webkitImageSmoothingEnabled) {context.webkitImageSmoothingEnabled = false;}
+    if(context.mozImageSmoothingEnabled) {context.mozImageSmoothingEnabled = false;}
+
 
     for (var block_y=0; block_y<NUM_CITY_BLOCKS; block_y++) {
         for (var block_x=0; block_x<NUM_CITY_BLOCKS; block_x++) {

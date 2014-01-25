@@ -79,4 +79,14 @@ var b33 = [
     { "src": "assets/gfx/buildings/b33_02.png" },
 ];
 
-var manifests = [b11, b12, b13, b21, b22, b23, b23, b32, b33];
+var manifests = {
+    b11: b11,
+    b12: b12,
+    b13: b13,
+    b21: b21,
+    b22: b22,
+    b23: b23,
+    b31: b31,
+    b32: b32,
+    b33: b33,
+};
