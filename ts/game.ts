@@ -5,14 +5,14 @@
 ///<reference path="../lib/box2dweb.d.ts" />
 ///<reference path="citygrid.ts" />
 
-var CANVAS_SIZE = 512;
+var CANVAS_SIZE_PX = 512;
 var NUM_CITY_BLOCKS = 8;
 var BUILDINGS_PER_BLOCK = 8;
 var CITY_SIZE = NUM_CITY_BLOCKS * BUILDINGS_PER_BLOCK;
-var SCALE = CANVAS_SIZE / CITY_SIZE;
+var SCALE = CANVAS_SIZE_PX / CITY_SIZE;
 var PLAYER_SIZE = ROAD_WIDTH / 4;
 var ROAD_WIDTH = 4 / SCALE;
-var CITY_BLOCK_SIZE_PX = CANVAS_SIZE / NUM_CITY_BLOCKS;
+var CITY_BLOCK_SIZE_PX = CANVAS_SIZE_PX / NUM_CITY_BLOCKS;
 
 var loader = new createjs.LoadQueue();
 
@@ -72,27 +72,60 @@ class CityBlock {
             this.small.graphics.drawRect(rx * SCALE, ry * SCALE, rw * SCALE + 1, rh * SCALE + 1);
         }
         this.small.cache(0, 0, CITY_BLOCK_SIZE_PX, CITY_BLOCK_SIZE_PX);
+
+        // render big
+        this.big = new createjs.Shape();
+        this.big.graphics.beginFill("#ff3e3e").setStrokeStyle(0);
+        this.big.graphics.drawRect(0, 0, CANVAS_SIZE_PX, CANVAS_SIZE_PX);
+        this.big.graphics.beginFill("#ff6763");
+        for(var i=0; i < this.rects.length; i++) {
+            var rect = this.rects[i];
+            var rx = rect.x + ROAD_WIDTH / 2;
+            var ry = rect.y + ROAD_WIDTH / 2;
+            var rw = rect.width - ROAD_WIDTH;
+            var rh = rect.height - ROAD_WIDTH;
+            this.big.graphics.drawRect(rx * CANVAS_SIZE_PX / BUILDINGS_PER_BLOCK, 
+                                       ry * CANVAS_SIZE_PX / BUILDINGS_PER_BLOCK,
+                                       rw * CANVAS_SIZE_PX / BUILDINGS_PER_BLOCK + 1,
+                                       rh * CANVAS_SIZE_PX / BUILDINGS_PER_BLOCK + 1);
+        }
+        this.big.cache(0, 0, CANVAS_SIZE_PX, CANVAS_SIZE_PX);
     }
 
     enableBig(world: b2World) {
-        // render all buildings within city block
-        //for(var i=0; i < this.rects.length; i++) {
-            //var rect = this.rects[i];
-            //bodyDef.type = b2Body.b2_staticBody;
-            //fixDef.shape = new b2PolygonShape();
-            //var boxHalfWidth = (rect.width - ROAD_WIDTH) / 2;
-            //var boxHalfHeight = (rect.height - ROAD_WIDTH) / 2;
-            //fixDef.shape.SetAsBox(boxHalfWidth, boxHalfHeight);
-            //var boxX = block_x + rect.x + ROAD_WIDTH / 2 + boxHalfWidth;
-            //var boxY = block_y + rect.y + ROAD_WIDTH / 2 + boxHalfHeight;
-            //bodyDef.position.Set(boxX, boxY);
-            //world.CreateBody(bodyDef).CreateFixture(fixDef);
-        //}
+        // destroy all existing bodies
+        var b = world.GetBodyList();
+        while (b) {
+            var tb = b;
+            b = b.GetNext();
+            world.DestroyBody(tb);
+        }
+        // create bodies for buildings
+        bodyDef.type = b2Body.b2_staticBody;
+        for(var i=0; i < this.rects.length; i++) {
+            var rect = this.rects[i];
+            fixDef.shape = new b2PolygonShape();
+            var boxHalfWidth = (rect.width - ROAD_WIDTH) / 2;
+            var boxHalfHeight = (rect.height - ROAD_WIDTH) / 2;
+            fixDef.shape.SetAsBox(boxHalfWidth, boxHalfHeight);
+            var boxX = block_x + rect.x + ROAD_WIDTH / 2 + boxHalfWidth;
+            var boxY = block_y + rect.y + ROAD_WIDTH / 2 + boxHalfHeight;
+            bodyDef.position.Set(boxX, boxY);
+            world.CreateBody(bodyDef).CreateFixture(fixDef);
+        }
     }
 
     disableBig(world: b2World) {
 
     }
+}
+
+function hideBig(bigSprite) {
+    stage.removeChild(bigSprite);
+}
+
+function showBig(bigSprite) {
+    stage.addChild(bigSprite);
 }
 
 var blocks = [];
@@ -115,6 +148,11 @@ function init() {
             stage.addChild(block.small);
             block.small.x = block.x;
             block.small.y = block.y;
+            var closure = function(func, big) { 
+                return function(e) { func(big); };
+            };
+            block.small.on("click", closure(showBig, block.big));
+            block.big.on("click", closure(hideBig, block.big));
         }
     }
 
@@ -134,14 +172,14 @@ function init() {
     stage.addChild(debugDrawSprite);
 
     //setup debug draw
-    //var debugDraw = new b2DebugDraw();
-    //debugDraw.SetRGBByHexStrokeColor("#FF0000");
-    //debugDraw.SetSprite(debugDrawSprite);
-    //debugDraw.SetDrawScale(SCALE);
-    //debugDraw.SetFillAlpha(0.5);
-    //debugDraw.SetStrokeThickness(0.5);
-    //debugDraw.SetFlags(b2DebugDraw.e_shapeBit | b2DebugDraw.e_jointBit);
-    //world.SetDebugDraw(debugDraw);
+    var debugDraw = new b2DebugDraw();
+    debugDraw.SetRGBByHexStrokeColor("#FF0000");
+    debugDraw.SetSprite(debugDrawSprite);
+    debugDraw.SetDrawScale(SCALE);
+    debugDraw.SetFillAlpha(0.5);
+    debugDraw.SetStrokeThickness(0.5);
+    debugDraw.SetFlags(b2DebugDraw.e_shapeBit | b2DebugDraw.e_jointBit);
+    world.SetDebugDraw(debugDraw);
     
     var onTick = function() {
         world.Step(1 / 60, 10, 10);
