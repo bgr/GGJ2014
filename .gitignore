@@ -1,0 +1,6 @@
+# ignore compiled js files
+ts/*.js
+
+
+# Vim
+*.swp
