@@ -40,13 +40,13 @@ function generateBuildings(width, height, maxSize=3) {
     return rects;
 }
 
-function drawBuildings(rects, scale=40, roadWidth=10) {
-    var shape = new createjs.Shape();
-    shape.graphics.beginStroke("#0000ff");
-    for(var i=0; i<rects.length; i++) {
-        var rect = rects[i];
-        shape.graphics.drawRect(rect.x * scale + roadWidth/2, rect.y * scale + roadWidth/2, 
-                                rect.width * scale - roadWidth, rect.height * scale - roadWidth);
-    }
-    return shape;
-}
+//function drawBuildings(rects, scale=40, roadWidth=10) {
+    //var shape = new createjs.Shape();
+    //shape.graphics.beginStroke("#0000ff");
+    //for(var i=0; i<rects.length; i++) {
+        //var rect = rects[i];
+        //shape.graphics.drawRect(rect.x * scale + roadWidth/2, rect.y * scale + roadWidth/2, 
+                                //rect.width * scale - roadWidth, rect.height * scale - roadWidth);
+    //}
+    //return shape;
+//}
