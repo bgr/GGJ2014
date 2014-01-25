@@ -125,14 +125,41 @@ class CityBlock {
     }
 }
 
-function hideBig(bigSprite) {
-    stage.removeChild(bigSprite);
+var bigShown = false;
+function showBig(block) {
+    if (bigShown) return;
+    stage.addChild(block.big);
+    block.big.alpha = 0;
+    block.big.x = block.x;
+    block.big.y = block.y;
+    createjs.Tween.get(block.big).to({ alpha:1, scaleX: 4, scaleY: 4, 
+                                       x: 0, y: 0 }, 400, createjs.Ease.bounceOut);
+    bigShown = true;
 }
 
-function showBig(bigSprite) {
-    stage.addChild(bigSprite);
-    bigSprite.scaleX = bigSprite.scaleY = 4;
+function hideBig(block) {
+    if (!bigShown) return;
+    var onCompleted = function() {
+        bigShown = false;
+        stage.removeChild(block.big));
+    }
+    createjs.Tween.get(block.big).to(
+        { alpha:0, scaleX: 1, scaleY: 1, x: block.x, y: block.y },
+        400, createjs.Ease.bounceOut).call(onCompleted);
 }
+
+
+var tint = new createjs.ColorFilter(1,1,.5,1);
+function highlightOn(sprite) {
+    sprite.filters = [tint];
+    sprite.updateCache();
+}
+
+function highlightOff(sprite) {
+    sprite.filters = [];
+    sprite.updateCache();
+}
+
 
 var blocks = [];
 
@@ -144,39 +171,45 @@ function init() {
     fixDef.restitution = 0.2;
     bodyDef = new b2BodyDef();
     stage = new createjs.Stage("game");
+    stage.enableMouseOver(30);
     var context = stage.canvas.getContext("2d"):
     if(context.imageSmoothingEnabled) {context.imageSmoothingEnabled = false;}
     if(context.webkitImageSmoothingEnabled) {context.webkitImageSmoothingEnabled = false;}
     if(context.mozImageSmoothingEnabled) {context.mozImageSmoothingEnabled = false;}
 
 
+    var container = new createjs.Container();
     for (var block_y=0; block_y<NUM_CITY_BLOCKS; block_y++) {
         for (var block_x=0; block_x<NUM_CITY_BLOCKS; block_x++) {
             var block = new CityBlock(block_x * CITY_BLOCK_SIZE_PX, 
                                       block_y * CITY_BLOCK_SIZE_PX, 
                                       "#FF0000");
             blocks.push(block);
-            stage.addChild(block.small);
+            container.addChild(block.small);
             block.small.x = block.x;
             block.small.y = block.y;
             var closure = function(func, big) { 
                 return function(e) { func(big); };
             };
-            block.small.on("click", closure(showBig, block.big));
-            block.big.on("click", closure(hideBig, block.big));
+            block.small.on("click", closure(showBig, block));
+            block.big.on("click", closure(hideBig, block));
+            // highlight
+            block.small.on("mouseover", closure(highlightOn, block.small));
+            block.small.on("mouseout", closure(highlightOff, block.small));
         }
     }
+    stage.addChild(container);
 
     // add player
-    var playerX = CITY_SIZE / 2 + ROAD_WIDTH / 2;
-    var playerY = playerX;
+    //var playerX = CITY_SIZE / 2 + ROAD_WIDTH / 2;
+    //var playerY = playerX;
 
-    bodyDef.type = b2Body.b2_dynamicBody;
-    fixDef.shape = new b2PolygonShape();
-    fixDef.shape.SetAsBox(PLAYER_SIZE / 2, PLAYER_SIZE / 2);
-    bodyDef.position.x = playerX + PLAYER_SIZE / 2;
-    bodyDef.position.y = playerY + PLAYER_SIZE / 2;
-    world.CreateBody(bodyDef).CreateFixture(fixDef);
+    //bodyDef.type = b2Body.b2_dynamicBody;
+    //fixDef.shape = new b2PolygonShape();
+    //fixDef.shape.SetAsBox(PLAYER_SIZE / 2, PLAYER_SIZE / 2);
+    //bodyDef.position.x = playerX + PLAYER_SIZE / 2;
+    //bodyDef.position.y = playerY + PLAYER_SIZE / 2;
+    //world.CreateBody(bodyDef).CreateFixture(fixDef);
 
 
     var debugDrawSprite = new createjs.Container();
