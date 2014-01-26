@@ -14,6 +14,15 @@ var PLAYER_SIZE = ROAD_WIDTH / 4;
 var ROAD_WIDTH = 4 / SCALE;
 var CITY_BLOCK_SIZE_PX = CANVAS_SIZE_PX / NUM_CITY_BLOCKS;
 var BUILDING_UNIT_PX = 16;
+var ZOOM_DURATION = 450;
+var ZOOM_WAIT = 200;
+
+var world;
+var fixDef;
+var bodyDef;
+var stage;
+var container;
+
 
 var loader = new createjs.LoadQueue();
 
@@ -44,12 +53,6 @@ var b2PolygonShape = Box2D.Collision.Shapes.b2PolygonShape;
 var b2CircleShape = Box2D.Collision.Shapes.b2CircleShape;
 var b2DebugDraw = Box2D.Dynamics.b2DebugDraw;
 var b2MouseJointDef =  Box2D.Dynamics.Joints.b2MouseJointDef;
-
-
-var world;
-var fixDef;
-var bodyDef;
-var stage;
 
 
 class CityBlock {
@@ -125,27 +128,37 @@ class CityBlock {
     }
 }
 
-var bigShown = false;
+var STATE_SMALL = 1, STATE_IN_TRANSITION = 2, STATE_BIG = 3;
+var zoomState = STATE_SMALL;
 function showBig(block) {
-    if (bigShown) return;
-    stage.addChild(block.big);
-    block.big.alpha = 0;
+    if (zoomState != STATE_SMALL) return;
+    zoomState = STATE_IN_TRANSITION;
+    container.addChild(block.big);
+    block.big.alpha = 1;
     block.big.x = block.x;
     block.big.y = block.y;
-    createjs.Tween.get(block.big).to({ alpha:1, scaleX: 4, scaleY: 4, 
-                                       x: 0, y: 0 }, 400, createjs.Ease.bounceOut);
-    bigShown = true;
+    block.big.scaleX = block.big.scaleY = 0.5;
+    //createjs.Tween.get(block.big).to({ alpha:1 }, ZOOM_DURATION);
+    var onCompleted = function() {
+        zoomState = STATE_BIG;
+    }
+    createjs.Tween.get(container).wait(ZOOM_WAIT).to(
+        { scaleX: 8, scaleY: 8, x: 0, y: 0 }, 
+        ZOOM_DURATION, createjs.Ease.bounceOut).call(onCompleted);
 }
 
 function hideBig(block) {
-    if (!bigShown) return;
+    if (zoomState != STATE_BIG) return;
+    zoomState = STATE_IN_TRANSITION;
     var onCompleted = function() {
-        bigShown = false;
-        stage.removeChild(block.big));
+        zoomState = STATE_SMALL;
+        block.big.alpha = 1;
+        container.removeChild(block.big);
     }
-    createjs.Tween.get(block.big).to(
-        { alpha:0, scaleX: 1, scaleY: 1, x: block.x, y: block.y },
-        400, createjs.Ease.bounceOut).call(onCompleted);
+    createjs.Tween.get(container).to(
+        { scaleX: 1, scaleY: 1, x: 0, y: 0 }, 
+        ZOOM_DURATION, createjs.Ease.bounceOut);
+    createjs.Tween.get(block.big).to( { alpha:0 }, ZOOM_DURATION).call(onCompleted);
 }
 
 
@@ -177,8 +190,7 @@ function init() {
     if(context.webkitImageSmoothingEnabled) {context.webkitImageSmoothingEnabled = false;}
     if(context.mozImageSmoothingEnabled) {context.mozImageSmoothingEnabled = false;}
 
-
-    var container = new createjs.Container();
+    container = new createjs.Container();
     for (var block_y=0; block_y<NUM_CITY_BLOCKS; block_y++) {
         for (var block_x=0; block_x<NUM_CITY_BLOCKS; block_x++) {
             var block = new CityBlock(block_x * CITY_BLOCK_SIZE_PX, 
