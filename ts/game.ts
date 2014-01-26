@@ -142,8 +142,10 @@ function showBig(block) {
     var onCompleted = function() {
         zoomState = STATE_BIG;
     }
+    var targetX = -CANVAS_SIZE_PX * 8 * block.x / CANVAS_SIZE_PX;
+    var targetY = -CANVAS_SIZE_PX * 8 * block.y / CANVAS_SIZE_PX;
     createjs.Tween.get(container).wait(ZOOM_WAIT).to(
-        { scaleX: 8, scaleY: 8, x: 0, y: 0 }, 
+        { scaleX: 8, scaleY: 8, x: targetX, y: targetY }, 
         ZOOM_DURATION, createjs.Ease.bounceOut).call(onCompleted);
 }
 
