@@ -10,7 +10,7 @@ Use arrow keys to navigate through the city and answer secret questions to prove
 RUN ONLINE: http://bgr.github.io/GGJ2014/
 
 Game can be ran from latest Chrome/Firefox browsers. In case that it doesn't load from your local filesystem, you can see it online at the github link above.
-The commit SHA of the submission version is baf7433d2c, in case that repository has been updated in the meantime.
+The commit SHA of the submission version is e2b3f0d3ae, in case that repository has been updated in the meantime.
 
 
 # Credits
