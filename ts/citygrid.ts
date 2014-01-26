@@ -50,13 +50,13 @@ function findPoints(rects) {
     for(var i=0; i<rects.length; i++) {
         var r = rects[i];
         if(r.y == 0)
-            tops.push(r);
-        if(r.y + r.height == 7)
-            bottoms.push(r);
+            tops.push(new createjs.Point(r.x == 0 ? r.width : r.x, 0));
+        if(r.y + r.height == 8)
+            bottoms.push(new createjs.Point(r.x == 0 ? r.width : r.x, 8));
         if(r.x == 0)
-            lefts.push(r);
-        if(r.x + r.width == 7)
-            rights.push(r);
+            lefts.push(new createjs.Point(0, r.y == 0 ? r.height : r.y));
+        if(r.x + r.width == 8)
+            rights.push(new createjs.Point(8, r.y == 0 ? r.height : r.y));
     }
     return { top: rndelem(tops), left: rndelem(lefts), 
              bottom: rndelem(bottoms), right: rndelem(rights) };

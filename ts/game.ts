@@ -38,7 +38,7 @@ for (k in manifests) {
 
 class CityBlock {
     small: createjs.Shape;
-    big: createjs.Shape;
+    big: createjs.Container;
     rects: Array;
     constructor(public x: number, public y: number, public colorFilter: createjs.ColorFilter) {
         this.rects = generateBuildings(BUILDINGS_PER_BLOCK, BUILDINGS_PER_BLOCK, maxSize=3);
@@ -61,10 +61,11 @@ class CityBlock {
         this.small.cache(0, 0, CITY_BLOCK_SIZE_PX, CITY_BLOCK_SIZE_PX);
 
         // render big
-        this.big = new createjs.Shape();
-        this.big.graphics.beginFill("#3e3e3e").setStrokeStyle(0);
+        this.big = new createjs.Container();
+        var b = new createjs.Shape();
+        b.graphics.beginFill("#3e3e3e").setStrokeStyle(0);
         var mx = new createjs.Matrix2D();
-        this.big.graphics.drawRect(0, 0, 
+        b.graphics.drawRect(0, 0, 
                 BUILDINGS_PER_BLOCK * BUILDING_UNIT_PX, BUILDINGS_PER_BLOCK * BUILDING_UNIT_PX);
         for(var i=0; i < this.rects.length; i++) {
             var rect = this.rects[i];
@@ -73,30 +74,49 @@ class CityBlock {
             var key = "b" + rect.width + "" + rect.height;
             var img = loader.getResult(rndelem(manifests[key]).src);
             mx.translate(rx, ry);
-            this.big.graphics.beginBitmapFill(img, "no-repeat", mx);
-            this.big.graphics.drawRect(rx, ry, 
+            b.graphics.beginBitmapFill(img, "no-repeat", mx);
+            b.graphics.drawRect(rx, ry, 
                                        rect.width * BUILDING_UNIT_PX, 
                                        rect.height * BUILDING_UNIT_PX);
             mx.translate(-rx, -ry);
         }
-        this.big.filters = [colorFilter];
-        this.big.cache(0, 0, 
-                BUILDINGS_PER_BLOCK * BUILDING_UNIT_PX, BUILDINGS_PER_BLOCK * BUILDING_UNIT_PX);
+        b.filters = [colorFilter];
+        b.cache(0, 0, BUILDINGS_PER_BLOCK * BUILDING_UNIT_PX, BUILDINGS_PER_BLOCK * BUILDING_UNIT_PX);
+        this.big.addChild(b);
+    }
+
+    showPoints(points: Array) {
+        for(var i=0; i<points.length; i++) {
+            if(points[i]) {
+                var p = points[i].p;
+                var isStart = points[i].isStart;
+                var shape = new createjs.Shape();
+                var clr = isStart ? "#22DD22" : "#0044FF";
+                shape.graphics.beginFill(clr).drawCircle(
+                        p.x * BUILDING_UNIT_PX, p.y * BUILDING_UNIT_PX, 4, 4);
+                shape.alpha = 0.6;
+                this.big.addChild(shape);
+            }
+        }
     }
 }
 
 var STATE_SMALL = 1, STATE_IN_TRANSITION = 2, STATE_BIG = 3, STATE_RIDDLE = 4;
 var zoomState = STATE_SMALL;
 var curBigBlock;
-function showBig(block, startPos, goalPos) {
+function showBig(block, points) {
     if (zoomState != STATE_SMALL) return;
     zoomState = STATE_IN_TRANSITION;
     curBigBlock = block;
-    container.addChild(curBigBlock.big);
-    curBigBlock.big.alpha = 1;
-    curBigBlock.big.x = curBigBlock.x;
-    curBigBlock.big.y = curBigBlock.y;
-    curBigBlock.big.scaleX = curBigBlock.big.scaleY = 0.5;
+    var big = curBigBlock.big;
+    container.addChild(big);
+    big.alpha = 1;
+    big.x = curBigBlock.x;
+    big.y = curBigBlock.y;
+    big.scaleX = big.scaleY = 0.5;
+
+    block.showPoints(points);
+
     var onCompleted = function() {
         zoomState = STATE_BIG;
     }
@@ -186,6 +206,21 @@ function init() {
         highlightOff(curBlock);
         highlightOn(newBlock);
 
+        var points = findPoints(newBlock.rects);
+        var ptop, pleft, pbottom, pright;
+        if(nx > 0) {
+            pleft = { p: points.left, isStart: right == 1 };
+        }
+        if(nx < 7) {
+            pright = { p: points.right, isStart: right == -1 };
+        }
+        if(ny > 0) {
+            ptop = { p: points.top, isStart: down == 1 };
+        }
+        if(ny < 7) {
+            pbottom = { p: points.bottom, isStart: down == -1 };
+        }
+        points = [ptop, pleft, pbottom, pright];
 
         var riddleRight = function() {
             console.log("YOU WERE RIGHT");
@@ -194,7 +229,7 @@ function init() {
         var riddleWrong = function() {
             console.log("YOU WERE WRONG");
             zoomState = STATE_SMALL;
-            showBig(newBlock);
+            showBig(newBlock, points);
         }
 
         if(playerColor == newBlock.colorFilter) {
@@ -204,7 +239,7 @@ function init() {
         }
         else {
             console.log("ENEMY");
-            showBig(newBlock);
+            showBig(newBlock, points);
         }
     };
 
