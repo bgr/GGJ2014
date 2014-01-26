@@ -11,6 +11,33 @@
 #riddle, input {
     font-family: 'Audiowide', cursive;
     font-size: 20px;
+    color: white;
+}
+
+/*#riddleQuestion {*/
+    /*-webkit-box-shadow: 5px 5px 1px 0px rgba(0, 0, 0, 0.85);*/
+    /*-moz-box-shadow:    5px 5px 1px 0px rgba(0, 0, 0, 0.85);*/
+    /*box-shadow:         5px 5px 1px 0px rgba(0, 0, 0, 0.85);*/
+/*}*/
+
+#riddle {
+    position: absolute;
+    width: 412px;
+    display: inline-block;
+    margin: auto;
+    top: 200px;
+    left: 50px;
+    text-align: center;
+}
+
+#gameContainer {
+    display: table-cell;
+    height: 512px;
+    width: 512px;
+}
+
+#game {
+    position: absolute;
 }
 
 input {

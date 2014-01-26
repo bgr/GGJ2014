@@ -31,25 +31,32 @@ function getDivide() {
 
 var riddles = [getAdd, getSubtract, getMultiply, getDivide];
 
+var curRiddle, curOnRight, curOnWrong;
+var input = $('#riddleInput')
+var riddleDiv = $('#riddle');
+input.keyup(function(e) {
+    if (e.keyCode == 13 && input.val() != "") {
+        if(input.val() == curRiddle.answer) {
+            curOnRight();
+        }
+        else {
+            console.log("wrong, " + curRiddle.op1 + " " + curRiddle.sign + " " 
+                + curRiddle.op2 + " = " + curRiddle.answer);
+            curOnWrong();
+        }
+        input.val("");
+        riddleDiv.hide();
+    }
+});
+
 function askRiddle(onRight, onWrong) {
-    var riddleDiv = $('#riddle');
     riddleDiv.show();
     var riddle = rndelem(riddles)();
     var span = $('#riddleQuestion').html(
             "Prove that you're one of them, answer the secret question:<br/>" +
             riddle.op1 + " " + riddle.sign + " " + riddle.op2 + " = ");
-    var input = $('#riddleInput');
+    curRiddle = riddle;
+    curOnRight = onRight;
+    curOnWrong = onWrong;
     input.focus();
-    input.keyup(function(e) {
-        if (e.keyCode == 13 && input.val() != "") {
-            if(input.val() == riddle.answer) {
-                onRight();
-            }
-            else {
-                onWrong();
-            }
-            input.val("");
-            riddleDiv.hide();
-        }
-    });
 }

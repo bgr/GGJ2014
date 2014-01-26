@@ -41,3 +41,23 @@ function generateBuildings(width, height, maxSize=3) {
     }
     return rects;
 }
+
+function findPoints(rects) {
+    var tops = [];
+    var lefts = [];
+    var bottoms = [];
+    var rights = [];
+    for(var i=0; i<rects.length; i++) {
+        var r = rects[i];
+        if(r.y == 0)
+            tops.push(r);
+        if(r.y + r.height == 7)
+            bottoms.push(r);
+        if(r.x == 0)
+            lefts.push(r);
+        if(r.x + r.width == 7)
+            rights.push(r);
+    }
+    return { top: rndelem(tops), left: rndelem(lefts), 
+             bottom: rndelem(bottoms), right: rndelem(rights) };
+}

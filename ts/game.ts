@@ -2,7 +2,6 @@
 ///<reference path="../lib/createjs.d.ts" />
 ///<reference path="../lib/preloadjs.d.ts" />
 ///<reference path="../lib/easeljs.d.ts" />
-///<reference path="../lib/box2dweb.d.ts" />
 ///<reference path="citygrid.ts" />
 ///<reference path="riddles.ts" />
 
@@ -22,12 +21,10 @@ var KEY_UP = 38;
 var KEY_RIGHT = 39;
 var KEY_DOWN = 40;
 
-var world;
-var fixDef;
-var bodyDef;
 var stage;
 var container;
 var playerPosition;
+var playerColor;
 
 
 var loader = new createjs.LoadQueue();
@@ -38,28 +35,6 @@ loader.on("complete", (e) => { console.log("completed"); init(); });
 for (k in manifests) {
     loader.loadManifest(manifests[k]);
 }
-
-import b2Common = Box2D.Common;
-import b2Math = Box2D.Common.Math;
-import b2Collision = Box2D.Collision;
-import b2Shapes = Box2D.Collision.Shapes;
-import b2Dynamics = Box2D.Dynamics;
-import b2Contacts = Box2D.Dynamics.Contacts;
-import b2Controllers = Box2D.Dynamics.Controllers;
-import b2Joints = Box2D.Dynamics.Joints;
-var b2Vec2 = Box2D.Common.Math.b2Vec2;
-var b2AABB = Box2D.Collision.b2AABB;
-var b2BodyDef = Box2D.Dynamics.b2BodyDef;
-var b2Body = Box2D.Dynamics.b2Body;
-var b2FixtureDef = Box2D.Dynamics.b2FixtureDef;
-var b2Fixture = Box2D.Dynamics.b2Fixture;
-var b2World = Box2D.Dynamics.b2World;
-var b2MassData = Box2D.Collision.Shapes.b2MassData;
-var b2PolygonShape = Box2D.Collision.Shapes.b2PolygonShape;
-var b2CircleShape = Box2D.Collision.Shapes.b2CircleShape;
-var b2DebugDraw = Box2D.Dynamics.b2DebugDraw;
-var b2MouseJointDef =  Box2D.Dynamics.Joints.b2MouseJointDef;
-
 
 class CityBlock {
     small: createjs.Shape;
@@ -108,46 +83,20 @@ class CityBlock {
         this.big.cache(0, 0, 
                 BUILDINGS_PER_BLOCK * BUILDING_UNIT_PX, BUILDINGS_PER_BLOCK * BUILDING_UNIT_PX);
     }
-
-    enableBig(world: b2World) {
-        // destroy all existing bodies
-        var b = world.GetBodyList();
-        while (b) {
-            var tb = b;
-            b = b.GetNext();
-            world.DestroyBody(tb);
-        }
-        // create bodies for buildings
-        bodyDef.type = b2Body.b2_staticBody;
-        for(var i=0; i < this.rects.length; i++) {
-            var rect = this.rects[i];
-            fixDef.shape = new b2PolygonShape();
-            var boxHalfWidth = (rect.width - ROAD_WIDTH) / 2;
-            var boxHalfHeight = (rect.height - ROAD_WIDTH) / 2;
-            fixDef.shape.SetAsBox(boxHalfWidth, boxHalfHeight);
-            var boxX = block_x + rect.x + ROAD_WIDTH / 2 + boxHalfWidth;
-            var boxY = block_y + rect.y + ROAD_WIDTH / 2 + boxHalfHeight;
-            bodyDef.position.Set(boxX, boxY);
-            world.CreateBody(bodyDef).CreateFixture(fixDef);
-        }
-    }
-
-    disableBig(world: b2World) {
-
-    }
 }
 
 var STATE_SMALL = 1, STATE_IN_TRANSITION = 2, STATE_BIG = 3, STATE_RIDDLE = 4;
 var zoomState = STATE_SMALL;
-function showBig(block) {
+var curBigBlock;
+function showBig(block, startPos, goalPos) {
     if (zoomState != STATE_SMALL) return;
     zoomState = STATE_IN_TRANSITION;
-    container.addChild(block.big);
-    block.big.alpha = 1;
-    block.big.x = block.x;
-    block.big.y = block.y;
-    block.big.scaleX = block.big.scaleY = 0.5;
-    //createjs.Tween.get(block.big).to({ alpha:1 }, ZOOM_DURATION);
+    curBigBlock = block;
+    container.addChild(curBigBlock.big);
+    curBigBlock.big.alpha = 1;
+    curBigBlock.big.x = curBigBlock.x;
+    curBigBlock.big.y = curBigBlock.y;
+    curBigBlock.big.scaleX = curBigBlock.big.scaleY = 0.5;
     var onCompleted = function() {
         zoomState = STATE_BIG;
     }
@@ -158,18 +107,19 @@ function showBig(block) {
         ZOOM_DURATION, createjs.Ease.bounceOut).call(onCompleted);
 }
 
-function hideBig(block) {
+function hideBig() {
     if (zoomState != STATE_BIG) return;
     zoomState = STATE_IN_TRANSITION;
     var onCompleted = function() {
         zoomState = STATE_SMALL;
-        block.big.alpha = 1;
-        container.removeChild(block.big);
+        curBigBlock.big.alpha = 1;
+        container.removeChild(curBigBlock.big);
+        curBigBlock = undefined;
     }
     createjs.Tween.get(container).to(
         { scaleX: 1, scaleY: 1, x: 0, y: 0 }, 
         ZOOM_DURATION, createjs.Ease.bounceOut);
-    createjs.Tween.get(block.big).to( { alpha:0 }, ZOOM_DURATION).call(onCompleted);
+    createjs.Tween.get(curBigBlock.big).to( { alpha:0 }, ZOOM_DURATION).call(onCompleted);
 }
 
 
@@ -189,22 +139,16 @@ function highlightOff(block) {
 
 var blocks = [];
 var colorFilters = [
-    new createjs.ColorFilter(1, 1, .5),
-    new createjs.ColorFilter(1, .5, 1),
-    new createjs.ColorFilter(.5, 1, 1),
+    new createjs.ColorFilter(1.2, 1, 1, 1, 20, 0, 0),
+    new createjs.ColorFilter(1, 1.2, 1, 1, 0, 20, 0),
+    new createjs.ColorFilter(1, 1, 1.2, 1, 0, 0, 20),
 ];
 
 function init() {
-    world = new b2World(new b2Vec2(0, 0),  true);
-    fixDef = new b2FixtureDef();
-    fixDef.density = 1.0;
-    fixDef.friction = 0.5;
-    fixDef.restitution = 0.2;
-    bodyDef = new b2BodyDef();
     stage = new createjs.Stage("game");
     stage.snapToPixel = true;
     stage.snapToPixelEnabled = true;
-    stage.enableMouseOver(30);
+    stage.enableMouseOver(60);
     var context = stage.canvas.getContext("2d");
     if(context.imageSmoothingEnabled) {context.imageSmoothingEnabled = false;}
     if(context.webkitImageSmoothingEnabled) {context.webkitImageSmoothingEnabled = false;}
@@ -228,6 +172,7 @@ function init() {
 
     playerPosition = new createjs.Point(Math.floor(Math.random() * NUM_CITY_BLOCKS),
                                         Math.floor(Math.random() * NUM_CITY_BLOCKS));
+    playerColor = blocks[playerPosition.y][playerPosition.x].colorFilter;
     highlightOn(blocks[playerPosition.y][playerPosition.x]);
 
     var movePlayer = function(down, right) {
@@ -241,6 +186,7 @@ function init() {
         highlightOff(curBlock);
         highlightOn(newBlock);
 
+
         var riddleRight = function() {
             console.log("YOU WERE RIGHT");
             zoomState = STATE_SMALL;
@@ -251,7 +197,7 @@ function init() {
             showBig(newBlock);
         }
 
-        if(curBlock.colorFilter == newBlock.colorFilter) {
+        if(playerColor == newBlock.colorFilter) {
             console.log("FRIENDLY");
             askRiddle(riddleRight, riddleWrong);
             zoomState = STATE_RIDDLE;
@@ -263,6 +209,7 @@ function init() {
     };
 
     $(window).keydown(function(e) {
+        console.log(e.keyCode);
         switch(e.keyCode) {
             case KEY_UP:
                 console.log('up', e.keyCode);
@@ -280,11 +227,15 @@ function init() {
                 console.log('right', e.keyCode);
                 movePlayer(0, 1);
                 break;
+            case 55: // cheat
+                if (zoomState == STATE_BIG) {
+                    hideBig();
+                }
+                console.log('right', e.keyCode);
+                movePlayer(0, 1);
+                break;
         }
     });
-    //block.small.on("mouseover", closure(highlightOn, block));
-    //block.small.on("mouseout", closure(highlightOff, block));
-
 
     var onTick = function() {
         stage.update();
