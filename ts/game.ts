@@ -40,6 +40,7 @@ class CityBlock {
     small: createjs.Shape;
     big: createjs.Container;
     rects: Array;
+    private points: Array;
     constructor(public x: number, public y: number, public colorFilter: createjs.ColorFilter) {
         this.rects = generateBuildings(BUILDINGS_PER_BLOCK, BUILDINGS_PER_BLOCK, maxSize=3);
 
@@ -86,6 +87,7 @@ class CityBlock {
     }
 
     showPoints(points: Array) {
+        this.points = [];
         for(var i=0; i<points.length; i++) {
             if(points[i]) {
                 var p = points[i].p;
@@ -96,8 +98,15 @@ class CityBlock {
                         p.x * BUILDING_UNIT_PX, p.y * BUILDING_UNIT_PX, 4, 4);
                 shape.alpha = 0.6;
                 this.big.addChild(shape);
+                this.points.push(shape);
             }
         }
+    }
+    hidePoints() {
+        for(var i=0; i<this.points.length; i++) {
+            this.big.removeChild(this.points[i]);
+        }
+        this.points = [];
     }
 }
 
@@ -130,6 +139,7 @@ function showBig(block, points) {
 function hideBig() {
     if (zoomState != STATE_BIG) return;
     zoomState = STATE_IN_TRANSITION;
+    curBigBlock.hidePoints();
     var onCompleted = function() {
         zoomState = STATE_SMALL;
         curBigBlock.big.alpha = 1;
