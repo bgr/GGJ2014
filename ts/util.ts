@@ -8,9 +8,14 @@ function sum(arr) {
     return arr.reduce((a, b) =>  a + b, 0);
 }
 
-function rndelem(arr) {
-    return arr[Math.floor(Math.random() * arr.length)];
+function rndelem(obj) {
+    var keys = [];
+    for(k in obj) {
+        keys.push(k);
+	}
+    return obj[keys[Math.floor(Math.random() * keys.length)]];
 }
+
 
 // returns position of Box2D element 
 // http://js-tut.aardon.de/js-tut/tutorial/position.html

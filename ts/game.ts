@@ -4,6 +4,9 @@
 ///<reference path="../lib/easeljs.d.ts" />
 ///<reference path="../lib/box2dweb.d.ts" />
 ///<reference path="citygrid.ts" />
+///<reference path="riddles.ts" />
+
+askRiddle();
 
 var CANVAS_SIZE_PX = 512;
 var NUM_CITY_BLOCKS = 8;
@@ -196,7 +199,7 @@ function init() {
     bodyDef = new b2BodyDef();
     stage = new createjs.Stage("game");
     stage.enableMouseOver(30);
-    var context = stage.canvas.getContext("2d"):
+    var context = stage.canvas.getContext("2d");
     if(context.imageSmoothingEnabled) {context.imageSmoothingEnabled = false;}
     if(context.webkitImageSmoothingEnabled) {context.webkitImageSmoothingEnabled = false;}
     if(context.mozImageSmoothingEnabled) {context.mozImageSmoothingEnabled = false;}
@@ -206,7 +209,7 @@ function init() {
         for (var block_x=0; block_x<NUM_CITY_BLOCKS; block_x++) {
             var block = new CityBlock(block_x * CITY_BLOCK_SIZE_PX, 
                                       block_y * CITY_BLOCK_SIZE_PX, 
-                                      rndelem((colorFilters));
+                                      rndelem(colorFilters));
             blocks.push(block);
             container.addChild(block.small);
             block.small.x = block.x;
