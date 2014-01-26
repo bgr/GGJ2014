@@ -6,25 +6,28 @@
 ///<reference path="citygrid.ts" />
 ///<reference path="riddles.ts" />
 
-askRiddle();
-
 var CANVAS_SIZE_PX = 512;
 var NUM_CITY_BLOCKS = 8;
 var BUILDINGS_PER_BLOCK = 8;
 var CITY_SIZE = NUM_CITY_BLOCKS * BUILDINGS_PER_BLOCK;
 var SCALE = CANVAS_SIZE_PX / CITY_SIZE;
 var PLAYER_SIZE = ROAD_WIDTH / 4;
-var ROAD_WIDTH = 4 / SCALE;
+var ROAD_WIDTH = 3 / SCALE;
 var CITY_BLOCK_SIZE_PX = CANVAS_SIZE_PX / NUM_CITY_BLOCKS;
 var BUILDING_UNIT_PX = 16;
 var ZOOM_DURATION = 450;
 var ZOOM_WAIT = 200;
+var KEY_LEFT = 37;
+var KEY_UP = 38;
+var KEY_RIGHT = 39;
+var KEY_DOWN = 40;
 
 var world;
 var fixDef;
 var bodyDef;
 var stage;
 var container;
+var playerPosition;
 
 
 var loader = new createjs.LoadQueue();
@@ -67,6 +70,7 @@ class CityBlock {
 
         // render small
         this.small = new createjs.Shape();
+        this.small.snapToPixel = true;
         this.small.graphics.beginFill("#3e3e3e").setStrokeStyle(0);
         this.small.graphics.drawRect(0, 0, CITY_BLOCK_SIZE_PX, CITY_BLOCK_SIZE_PX);
         this.small.graphics.beginFill("#6e6763");
@@ -169,7 +173,7 @@ function hideBig(block) {
 }
 
 
-var tint = new createjs.ColorFilter(1.2, 1.2, 1.2, 1);
+var tint = new createjs.ColorFilter(1.4, 1.5, 1.3, 1);
 function highlightOn(block) {
     if(block.small.filters.length == 1)
         block.small.filters.push(tint);
@@ -198,6 +202,8 @@ function init() {
     fixDef.restitution = 0.2;
     bodyDef = new b2BodyDef();
     stage = new createjs.Stage("game");
+    stage.snapToPixel = true;
+    stage.snapToPixelEnabled = true;
     stage.enableMouseOver(30);
     var context = stage.canvas.getContext("2d");
     if(context.imageSmoothingEnabled) {context.imageSmoothingEnabled = false;}
@@ -206,55 +212,61 @@ function init() {
 
     container = new createjs.Container();
     for (var block_y=0; block_y<NUM_CITY_BLOCKS; block_y++) {
+        var blockRow = [];
         for (var block_x=0; block_x<NUM_CITY_BLOCKS; block_x++) {
             var block = new CityBlock(block_x * CITY_BLOCK_SIZE_PX, 
                                       block_y * CITY_BLOCK_SIZE_PX, 
                                       rndelem(colorFilters));
-            blocks.push(block);
+            blockRow.push(block);
             container.addChild(block.small);
             block.small.x = block.x;
             block.small.y = block.y;
-            var closure = function(func, big) { 
-                return function(e) { func(big); };
-            };
-            block.small.on("click", closure(showBig, block));
-            block.big.on("click", closure(hideBig, block));
-            // highlight
-            block.small.on("mouseover", closure(highlightOn, block));
-            block.small.on("mouseout", closure(highlightOff, block));
         }
+        blocks.push(blockRow);
     }
     stage.addChild(container);
 
-    // add player
-    //var playerX = CITY_SIZE / 2 + ROAD_WIDTH / 2;
-    //var playerY = playerX;
+    playerPosition = new createjs.Point(Math.floor(Math.random() * NUM_CITY_BLOCKS),
+                                        Math.floor(Math.random() * NUM_CITY_BLOCKS));
+    highlightOn(blocks[playerPosition.y][playerPosition.x]);
 
-    //bodyDef.type = b2Body.b2_dynamicBody;
-    //fixDef.shape = new b2PolygonShape();
-    //fixDef.shape.SetAsBox(PLAYER_SIZE / 2, PLAYER_SIZE / 2);
-    //bodyDef.position.x = playerX + PLAYER_SIZE / 2;
-    //bodyDef.position.y = playerY + PLAYER_SIZE / 2;
-    //world.CreateBody(bodyDef).CreateFixture(fixDef);
+    var movePlayer = function(down, right) {
+        var nx = playerPosition.x + right;
+        var ny = playerPosition.y + down;
+        if(nx < 0 || nx > 7 ||  ny < 0 || ny > 7) return;
+        console.log('highlighting', nx, ny);
+        highlightOff(blocks[playerPosition.y][playerPosition.x]);
+        playerPosition.x = nx;
+        playerPosition.y = ny;
+        highlightOn(blocks[playerPosition.y][playerPosition.x]);
+    };
 
 
-    var debugDrawSprite = new createjs.Container();
-    stage.addChild(debugDrawSprite);
+    $(window).keydown(function(e) {
+        switch(e.keyCode) {
+            case KEY_UP:
+                console.log('up', e.keyCode);
+                movePlayer(-1, 0);
+                break;
+            case KEY_DOWN:
+                console.log('down', e.keyCode);
+                movePlayer(1, 0);
+                break;
+            case KEY_LEFT:
+                console.log('left', e.keyCode);
+                movePlayer(0, -1);
+                break;
+            case KEY_RIGHT:
+                console.log('right', e.keyCode);
+                movePlayer(0, 1);
+                break;
+        }
+    });
+    //block.small.on("mouseover", closure(highlightOn, block));
+    //block.small.on("mouseout", closure(highlightOff, block));
 
-    //setup debug draw
-    var debugDraw = new b2DebugDraw();
-    debugDraw.SetRGBByHexStrokeColor("#FF0000");
-    debugDraw.SetSprite(debugDrawSprite);
-    debugDraw.SetDrawScale(SCALE);
-    debugDraw.SetFillAlpha(0.5);
-    debugDraw.SetStrokeThickness(0.5);
-    debugDraw.SetFlags(b2DebugDraw.e_shapeBit | b2DebugDraw.e_jointBit);
-    world.SetDebugDraw(debugDraw);
-    
+
     var onTick = function() {
-        world.Step(1 / 60, 10, 10);
-        world.DrawDebugData();
-        world.ClearForces();
         stage.update();
         //console.log(createjs.Ticker.getMeasuredFPS());
     }

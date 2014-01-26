@@ -14,7 +14,7 @@ function getSubtract() {
         op1 = op2;
         op2 = tmp;
     }
-    return { op1: op1, op2: op2, answer: op1 + op2, sign: '-' };
+    return { op1: op1, op2: op2, answer: op1 - op2, sign: '-' };
 }
 
 function getMultiply() {
@@ -31,8 +31,9 @@ function getDivide() {
 
 var riddles = [getAdd, getSubtract, getMultiply, getDivide];
 
-
 function askRiddle() {
+    var riddleDiv = $('#riddle');
+    riddleDiv.show();
     var riddle = rndelem(riddles)();
     var span = $('#riddleQuestion').html(
             "Prove that you're one of them, answer the secret question:<br/>" +
@@ -47,6 +48,7 @@ function askRiddle() {
                 console.log("fail", input.val());
             }
             input.val("");
+            riddleDiv.hide();
         }
     });
 }
