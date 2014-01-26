@@ -10,4 +10,10 @@
 
 #riddle, input {
     font-family: 'Audiowide', cursive;
+    font-size: 20px;
+}
+
+input {
+    background-color:transparent;
+    border: none;
 }

@@ -137,7 +137,7 @@ class CityBlock {
     }
 }
 
-var STATE_SMALL = 1, STATE_IN_TRANSITION = 2, STATE_BIG = 3;
+var STATE_SMALL = 1, STATE_IN_TRANSITION = 2, STATE_BIG = 3, STATE_RIDDLE = 4;
 var zoomState = STATE_SMALL;
 function showBig(block) {
     if (zoomState != STATE_SMALL) return;
@@ -233,14 +233,34 @@ function init() {
     var movePlayer = function(down, right) {
         var nx = playerPosition.x + right;
         var ny = playerPosition.y + down;
-        if(nx < 0 || nx > 7 ||  ny < 0 || ny > 7) return;
-        console.log('highlighting', nx, ny);
-        highlightOff(blocks[playerPosition.y][playerPosition.x]);
+        if(zoomState != STATE_SMALL || nx < 0 || nx > 7 ||  ny < 0 || ny > 7) return;
+        var curBlock = blocks[playerPosition.y][playerPosition.x];
+        var newBlock = blocks[ny][nx];
         playerPosition.x = nx;
         playerPosition.y = ny;
-        highlightOn(blocks[playerPosition.y][playerPosition.x]);
-    };
+        highlightOff(curBlock);
+        highlightOn(newBlock);
 
+        var riddleRight = function() {
+            console.log("YOU WERE RIGHT");
+            zoomState = STATE_SMALL;
+        }
+        var riddleWrong = function() {
+            console.log("YOU WERE WRONG");
+            zoomState = STATE_SMALL;
+            showBig(newBlock);
+        }
+
+        if(curBlock.colorFilter == newBlock.colorFilter) {
+            console.log("FRIENDLY");
+            askRiddle(riddleRight, riddleWrong);
+            zoomState = STATE_RIDDLE;
+        }
+        else {
+            console.log("ENEMY");
+            showBig(newBlock);
+        }
+    };
 
     $(window).keydown(function(e) {
         switch(e.keyCode) {

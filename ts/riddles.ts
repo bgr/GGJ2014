@@ -31,7 +31,7 @@ function getDivide() {
 
 var riddles = [getAdd, getSubtract, getMultiply, getDivide];
 
-function askRiddle() {
+function askRiddle(onRight, onWrong) {
     var riddleDiv = $('#riddle');
     riddleDiv.show();
     var riddle = rndelem(riddles)();
@@ -39,13 +39,14 @@ function askRiddle() {
             "Prove that you're one of them, answer the secret question:<br/>" +
             riddle.op1 + " " + riddle.sign + " " + riddle.op2 + " = ");
     var input = $('#riddleInput');
+    input.focus();
     input.keyup(function(e) {
         if (e.keyCode == 13 && input.val() != "") {
             if(input.val() == riddle.answer) {
-                console.log("win", input.val());
+                onRight();
             }
             else {
-                console.log("fail", input.val());
+                onWrong();
             }
             input.val("");
             riddleDiv.hide();
