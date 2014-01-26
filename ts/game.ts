@@ -59,7 +59,7 @@ class CityBlock {
     small: createjs.Shape;
     big: createjs.Shape;
     rects: Array;
-    constructor(public x: number, public y: number, public color: string) {
+    constructor(public x: number, public y: number, public colorFilter: createjs.ColorFilter) {
         this.rects = generateBuildings(BUILDINGS_PER_BLOCK, BUILDINGS_PER_BLOCK, maxSize=3);
 
         // render small
@@ -75,6 +75,7 @@ class CityBlock {
             var rh = rect.height - ROAD_WIDTH;
             this.small.graphics.drawRect(rx * SCALE, ry * SCALE, rw * SCALE + 1, rh * SCALE + 1);
         }
+        this.small.filters = [colorFilter];
         this.small.cache(0, 0, CITY_BLOCK_SIZE_PX, CITY_BLOCK_SIZE_PX);
 
         // render big
@@ -96,6 +97,7 @@ class CityBlock {
                                        rect.height * BUILDING_UNIT_PX);
             mx.translate(-rx, -ry);
         }
+        this.big.filters = [colorFilter];
         this.big.cache(0, 0, 
                 BUILDINGS_PER_BLOCK * BUILDING_UNIT_PX, BUILDINGS_PER_BLOCK * BUILDING_UNIT_PX);
     }
@@ -164,19 +166,26 @@ function hideBig(block) {
 }
 
 
-var tint = new createjs.ColorFilter(1,1,.5,1);
-function highlightOn(sprite) {
-    sprite.filters = [tint];
-    sprite.updateCache();
+var tint = new createjs.ColorFilter(1.2, 1.2, 1.2, 1);
+function highlightOn(block) {
+    if(block.small.filters.length == 1)
+        block.small.filters.push(tint);
+    block.small.updateCache();
 }
 
-function highlightOff(sprite) {
-    sprite.filters = [];
-    sprite.updateCache();
+function highlightOff(block) {
+    if(block.small.filters.length == 2)
+        block.small.filters.pop();
+    block.small.updateCache();
 }
 
 
 var blocks = [];
+var colorFilters = [
+    new createjs.ColorFilter(1, 1, .5),
+    new createjs.ColorFilter(1, .5, 1),
+    new createjs.ColorFilter(.5, 1, 1),
+];
 
 function init() {
     world = new b2World(new b2Vec2(0, 0),  true);
@@ -197,7 +206,7 @@ function init() {
         for (var block_x=0; block_x<NUM_CITY_BLOCKS; block_x++) {
             var block = new CityBlock(block_x * CITY_BLOCK_SIZE_PX, 
                                       block_y * CITY_BLOCK_SIZE_PX, 
-                                      "#FF0000");
+                                      rndelem((colorFilters));
             blocks.push(block);
             container.addChild(block.small);
             block.small.x = block.x;
@@ -208,8 +217,8 @@ function init() {
             block.small.on("click", closure(showBig, block));
             block.big.on("click", closure(hideBig, block));
             // highlight
-            block.small.on("mouseover", closure(highlightOn, block.small));
-            block.small.on("mouseout", closure(highlightOff, block.small));
+            block.small.on("mouseover", closure(highlightOn, block));
+            block.small.on("mouseout", closure(highlightOff, block));
         }
     }
     stage.addChild(container);
