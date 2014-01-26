@@ -1,6 +1,6 @@
 # About
 
-This was supposed to be a game where you deliver candy accross the city, but with your previous history of gang membership you must take care to avoid rival gang territories.
+This was supposed to be a game where you deliver candy across the city, but with your previous history of gang membership you must take care to avoid rival gang territories.
 Different gang members would see different parts of the city, either as peaceful or hostile.
 Use arrow keys to navigate through the city and answer secret questions to prove that you're not an impostor.
 
