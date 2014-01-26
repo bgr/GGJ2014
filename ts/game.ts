@@ -36,7 +36,9 @@ for (k in manifests) {
     loader.loadManifest(manifests[k]);
 }
 
+
 class CityBlock {
+    rects: Array;
     small: createjs.Shape;
     big: createjs.Container;
     rects: Array;
@@ -63,11 +65,14 @@ class CityBlock {
 
         // render big
         this.big = new createjs.Container();
-        var b = new createjs.Shape();
-        b.graphics.beginFill("#3e3e3e").setStrokeStyle(0);
+        var road = new createjs.Shape();
+        road.graphics.beginFill("#3e3e3e"); // road
+        road.graphics.drawRect(
+                0, 0, BUILDINGS_PER_BLOCK * BUILDING_UNIT_PX, BUILDINGS_PER_BLOCK * BUILDING_UNIT_PX);
+        this.big.addChild(road);
+        this.buildings = new createjs.Shape();
+        this.buildings.graphics.setStrokeStyle(0);
         var mx = new createjs.Matrix2D();
-        b.graphics.drawRect(0, 0, 
-                BUILDINGS_PER_BLOCK * BUILDING_UNIT_PX, BUILDINGS_PER_BLOCK * BUILDING_UNIT_PX);
         for(var i=0; i < this.rects.length; i++) {
             var rect = this.rects[i];
             var rx = rect.x * BUILDING_UNIT_PX;
@@ -75,15 +80,21 @@ class CityBlock {
             var key = "b" + rect.width + "" + rect.height;
             var img = loader.getResult(rndelem(manifests[key]).src);
             mx.translate(rx, ry);
-            b.graphics.beginBitmapFill(img, "no-repeat", mx);
-            b.graphics.drawRect(rx, ry, 
-                                       rect.width * BUILDING_UNIT_PX, 
-                                       rect.height * BUILDING_UNIT_PX);
+            this.buildings.graphics.beginBitmapFill(img, "no-repeat", mx);
+            this.buildings.graphics.drawRect(rx, ry, 
+                                rect.width * BUILDING_UNIT_PX, 
+                                rect.height * BUILDING_UNIT_PX);
             mx.translate(-rx, -ry);
         }
-        b.filters = [colorFilter];
-        b.cache(0, 0, BUILDINGS_PER_BLOCK * BUILDING_UNIT_PX, BUILDINGS_PER_BLOCK * BUILDING_UNIT_PX);
-        this.big.addChild(b);
+        this.buildings.filters = [colorFilter];
+        this.buildings.cache(0, 0, BUILDINGS_PER_BLOCK * BUILDING_UNIT_PX, BUILDINGS_PER_BLOCK * BUILDING_UNIT_PX);
+        this.big.addChild(this.buildings);
+        var b = this.buildings;
+        //stage.on("stagemousemove", function(e) {
+            //var p = b.globalToLocal(stage.mouseX, stage.mouseY);
+            //console.log(e.eventPhase);
+            //console.log(b.hitTest(p.x, p.y));
+        //});
     }
 
     showPoints(points: Array) {
